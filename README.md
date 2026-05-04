@@ -16,7 +16,6 @@ This repository contains our implementations of several machine learning algorit
 * `/models/`: Our algorithm implementations.
 * `/utils/`: Shared universal data parsing pipeline (`data_loader.py`) and evaluation loop (`evaluation.py`).
 * `/experiments/`: Scripts used to run hyperparameter sweeps and generate learning curves.
-* `/latex_source/`: Project report and generated plot figures.
 
 ## Setup Instructions
 1. Clone this repository to your local machine.
