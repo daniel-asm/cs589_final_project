@@ -94,10 +94,16 @@ class NeuralNetwork:
         cost_history = []
         patience_counter = 0 
         
+        output_nodes = self.layer_sizes[-1]
+        if output_nodes > 1:
+            y_train_ready = np.eye(output_nodes)[y_train[0].astype(int)].T
+        else:
+            y_train_ready = y_train
+        
         for epoch in range(epochs):
             permutation = np.random.permutation(m)
             X_shuffled = X_train[:, permutation]
-            y_shuffled = y_train[:, permutation]
+            y_shuffled = y_train_ready[:, permutation]
             
             for i in range(0, m, batch_size):
                 X_batch = X_shuffled[:, i:i+batch_size]
@@ -108,7 +114,7 @@ class NeuralNetwork:
                 self.update_weights(grads, alpha)
             
             full_activations = self.forward_propagation(X_train)
-            current_cost = self.compute_cost(y_train, full_activations[self.num_layers - 1])
+            current_cost = self.compute_cost(y_train_ready, full_activations[self.num_layers - 1])
             cost_history.append(current_cost)
             
             if epoch > 0:
