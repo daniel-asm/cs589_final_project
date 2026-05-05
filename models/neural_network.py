@@ -20,6 +20,11 @@ class NeuralNetwork:
 
     def sigmoid_derivative(self, a):
         return a * (1 - a)
+    
+    def softmax(self, z):
+        z_shifted = z - np.max(z, axis=0, keepdims=True)
+        exp_z = np.exp(z_shifted)
+        return exp_z / np.sum(exp_z, axis=0, keepdims=True)
 
     def compute_cost(self, y_true, a_out):
         m = y_true.shape[1]
@@ -46,7 +51,11 @@ class NeuralNetwork:
             A_bias = np.vstack([np.ones((1, m)), A])
             Z = np.dot(self.weights[l], A_bias)
             
-            A = self.sigmoid(Z)
+            if l == self.num_layers - 1 and self.layer_sizes[-1] > 1:
+                A = self.softmax(Z)
+            else:
+                A = self.sigmoid(Z)
+                
             activations[l] = A
             
         return activations
