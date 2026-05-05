@@ -3,11 +3,15 @@ import pandas as pd
 from sklearn.preprocessing import StandardScaler, OneHotEncoder, LabelEncoder
 from sklearn import datasets
 
-def load_tabular_dataset(filepath, target_column='label'):
+def load_tabular_dataset(filepath, target_column='label', explicit_cat_cols=None):
     """
     Universal parser for CSVs. Dynamically finds numerical and categorical columns.
     """
     df = pd.read_csv(filepath)
+
+    if explicit_cat_cols:
+        for col in explicit_cat_cols:
+            df[col] = df[col].astype('category')
     
     y_raw = df[target_column].values
     X_raw = df.drop(target_column, axis=1)
