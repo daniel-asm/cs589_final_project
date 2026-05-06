@@ -2,12 +2,18 @@ import numpy as np
 import pandas as pd
 from sklearn.preprocessing import StandardScaler, OneHotEncoder, LabelEncoder
 from sklearn import datasets
+from sklearn.datasets import fetch_openml
+from sklearn.model_selection import train_test_split
 
-def load_tabular_dataset(filepath, target_column='label'):
+def load_tabular_dataset(filepath, target_column='label', explicit_cat_cols=None):
     """
     Universal parser for CSVs. Dynamically finds numerical and categorical columns.
     """
     df = pd.read_csv(filepath)
+
+    if explicit_cat_cols:
+        for col in explicit_cat_cols:
+            df[col] = df[col].astype('category')
     
     y_raw = df[target_column].values
     X_raw = df.drop(target_column, axis=1)
@@ -44,3 +50,23 @@ def load_digits_dataset():
     y = y_raw.reshape(1, -1)
     
     return X, y
+
+def load_fashion_mnist_sample(sample_size=5000):
+    """
+    Pulls subset of Fashion-MNIST
+    Returns X as (784, samples) and y as (1, samples)
+    """
+    print("Fetching Fashion-MNIST from OpenML")
+    fmnist = fetch_openml('Fashion-MNIST', version=1, parser='auto')
+    
+    X_full = fmnist.data.astype(float).values
+    y_full = fmnist.target.astype(int).values
+    
+    X_sample, _, y_sample, _ = train_test_split(
+        X_full, y_full, train_size=sample_size, stratify=y_full, random_state=42
+    )
+    
+    scaler = StandardScaler()
+    X_scaled = scaler.fit_transform(X_sample)
+    
+    return X_scaled.T, y_sample.reshape(1, -1)
