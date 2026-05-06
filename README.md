@@ -10,6 +10,7 @@ This repository contains our implementations of several machine learning algorit
 * Oxford Parkinson's Disease Detection
 * Rice Grains Classification
 * Credit Approval
+* Fashion-MNIST (Image Classification)
 
 ## Repository Structure
 * `/datasets/`: Contains the raw CSV data files.
