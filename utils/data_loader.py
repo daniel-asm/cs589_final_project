@@ -51,7 +51,7 @@ def load_digits_dataset():
     
     return X, y
 
-def load_fashion_mnist_sample(sample_size=5000):
+def load_fashion_mnist_sample(sample_size=2000):
     """
     Pulls subset of Fashion-MNIST
     Returns X as (784, samples) and y as (1, samples)
