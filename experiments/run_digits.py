@@ -12,7 +12,6 @@ def run_digits_experiments():
     X, y = load_digits_dataset()
     
     os.makedirs('latex_source', exist_ok=True)
-    '''
     # 1. Neural Network Experiment
     print("\nRunning Neural Network")
     nn_param_grid = {
@@ -75,7 +74,6 @@ def run_digits_experiments():
     plt.xticks(k_vals)
     plt.savefig('latex_source/knn_digits_f1_curve.png')
     plt.show()
-    '''
 
     # ==========================================
     # 3. Decision Tree Experiment
