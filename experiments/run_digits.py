@@ -75,9 +75,7 @@ def run_digits_experiments():
     plt.savefig('latex_source/knn_digits_f1_curve.png')
     plt.show()
 
-    # ==========================================
     # 3. Decision Tree Experiment
-    # ==========================================
     print("\nRunning Decision Tree")
     dt_param_grid = {
         'max_depth': [3, 5, 7, 9, 11, 15, None],
