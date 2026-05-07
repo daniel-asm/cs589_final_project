@@ -22,7 +22,7 @@ This repository contains our implementations of several machine learning algorit
 ## Setup Instructions
 1. Clone this repository to your local machine.
 2. Install the required dependencies:
-   ```bash
+
    pip install -r requirements.txt
 
 ## Running Experiments
