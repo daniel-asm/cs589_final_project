@@ -1,46 +1,55 @@
+"""
+Original Author: Shreyas Donti
+"""
+
+
 import numpy as np
 from collections import Counter
 from .decision_tree import DecisionTreeClassifier
 
-class RandomForestClassifier:
-    def __init__(self, ntree=10, criterion='entropy', max_depth=None, min_samples_split=2, min_gain=0.0, **kwargs):
+# RandomForest class
+class RandomForest():
+    def __init__(self, ntree=10):
+        self.x = None
+        self.y = None
         self.ntree = ntree
-        self.criterion = criterion
-        self.max_depth = max_depth
-        self.min_samples_split = min_samples_split
-        self.min_gain = min_gain
         self.trees = []
 
-    def fit(self, X_train, y_train, **kwargs):
-        self.trees = []
+    def _predict(self, x):
+        # Predict a point in each tree
+        preds = [tree._predict(x) for tree in self.trees]
+        # Return the most common prediction
+        return max(set(preds), key=preds.count)
 
-        X_train_rows = np.array(X_train).T
-        y_train_flat = np.array(y_train).flatten()
-        n_samples = len(X_train_rows)
+    def _accuracy(self, x, y):
+        # Correct guesses and total points
+        correct = 0
+        for i in range(len(x)):
+            correct += 1 if self._predict(x[i]) == y[i] else 0
+        return correct/len(x)
+
+    def train(self, x, y):
+        self.trees = []
+        # Fit the training dataset to the model
+        self.x = np.array(x)
+        self.y = np.array(y)
 
         for _ in range(self.ntree):
-            bootstrap_indices = np.random.choice(n_samples, size=n_samples, replace=True)
-            X_bootstrap = X_train_rows[bootstrap_indices]
-            y_bootstrap = y_train_flat[bootstrap_indices]
+            # Create a DecisionTree on a bootstrapped sample of the training data
+            x_sample, y_sample = bootstrap_sample(self.x, self.y)
+            tree = DecisionTree()
+            tree.train(x_sample, y_sample)
 
-            tree = DecisionTreeClassifier(
-                criterion=self.criterion,
-                max_depth=self.max_depth,
-                min_samples_split=self.min_samples_split,
-                min_gain=self.min_gain,
-                max_features='sqrt'
-            )
-            
-            tree.fit(X_bootstrap.T, y_bootstrap)
+            # Add it to the random forest
             self.trees.append(tree)
 
-    def predict(self, X_test):
-        tree_predictions = np.array([tree.predict(X_test) for tree in self.trees])
-        
-        final_predictions = []
-        for i in range(tree_predictions.shape[1]):
-            sample_preds = tree_predictions[:, i]
-            most_common = Counter(sample_preds).most_common(1)[0][0]
-            final_predictions.append(most_common)
-            
-        return np.array(final_predictions)
+        # Predict each point
+        return self._accuracy(self.x, self.y)
+
+    def test(self, x, y):
+        # Convert test data into Numpy array
+        x_test = np.array(x)
+        y_test = np.array(y)
+
+        # Predict each point
+        return self._accuracy(x_test, y_test)
