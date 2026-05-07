@@ -27,7 +27,7 @@ class Node:
         self.feature_index = feature_index
         self.branches = branches            
         self.prediction = prediction       
-        self.fallback_class = fallback_class 
+        self.fallback_class = fallback_class
 
 def build_tree(X, y, feature_indices):
     unique_labels, counts = np.unique(y, return_counts=True)
