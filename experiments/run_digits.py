@@ -5,13 +5,14 @@ from utils.data_loader import load_digits_dataset
 from utils.evaluation import grid_search_cv
 from models.neural_network import NeuralNetwork
 from models.knn import KNN
+from models.decision_tree import DecisionTreeClassifier
 
 def run_digits_experiments():
     print("Loading Digits Dataset...")
     X, y = load_digits_dataset()
     
     os.makedirs('latex_source', exist_ok=True)
-
+    '''
     # 1. Neural Network Experiment
     print("\nRunning Neural Network")
     nn_param_grid = {
@@ -73,6 +74,45 @@ def run_digits_experiments():
     plt.grid(True)
     plt.xticks(k_vals)
     plt.savefig('latex_source/knn_digits_f1_curve.png')
+    plt.show()
+    '''
+
+    # ==========================================
+    # 3. Decision Tree Experiment
+    # ==========================================
+    print("\nRunning Decision Tree")
+    dt_param_grid = {
+        'max_depth': [3, 5, 7, 9, 11, 15, None],
+        'min_samples_split': [2],
+        'criterion': ['entropy', 'gini']
+    }
+    
+    dt_best_params, dt_results = grid_search_cv(DecisionTreeClassifier, X, y, dt_param_grid, k=10)
+
+    print("\nDecision Tree Full Results")
+    for res in dt_results:
+        print(f"Params: {res['params']} | Accuracy: {res['accuracy']:.4f} | F1-Score: {res['f1']:.4f}")
+    
+    best_crit = dt_best_params['criterion']
+    depth_vals = []
+    dt_f1_vals = []
+    
+    for res in dt_results:
+        if res['params']['criterion'] == best_crit:
+            val = res['params']['max_depth']
+            plot_val = 20 if val is None else val 
+            depth_vals.append(plot_val)
+            dt_f1_vals.append(res['f1'])
+            
+    # Plot DT F1 vs Max Depth
+    plt.figure(figsize=(8, 6))
+    plt.plot(depth_vals, dt_f1_vals, marker='s', color='orange', linestyle='-', linewidth=2, markersize=8)
+    plt.title(f"Decision Tree F1-Score vs. Max Depth (Digits)\nBest Params: {dt_best_params}")
+    plt.xlabel("Max Depth (20 = Unbounded)")
+    plt.ylabel("F1-Score")
+    plt.grid(True)
+    plt.xticks(depth_vals, labels=[str(d) if d != 20 else 'None' for d in depth_vals])
+    plt.savefig('latex_source/dt_digits_f1_curve.png')
     plt.show()
 
 if __name__ == "__main__":
