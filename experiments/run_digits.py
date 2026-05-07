@@ -34,12 +34,15 @@ def run_digits_experiments():
     print("\nRetraining optimal NN to capture learning curve...")
     optimal_nn = NeuralNetwork(**nn_best_params)
     cost_history = optimal_nn.fit(X, y, **fit_params)
+
+    m_samples = X.shape[1]
+    instances_presented = [epoch * m_samples for epoch in range(1, len(cost_history) + 1)]
     
     # Plot NN Convergence
     plt.figure(figsize=(8, 6))
-    plt.plot(range(len(cost_history)), cost_history, color='blue', linewidth=2)
+    plt.plot(instances_presented, cost_history, color='blue', linewidth=2)
     plt.title(f"Neural Network Convergence (Digits)\nParams: {nn_best_params}")
-    plt.xlabel("Epochs")
+    plt.xlabel("Number of Training Instances")
     plt.ylabel("Cost (J)")
     plt.grid(True)
     plt.savefig('latex_source/nn_digits_learning_curve.png')
