@@ -7,7 +7,7 @@ from models.neural_network import NeuralNetwork
 from models.knn import KNN
 
 def run_fashion_experiments():
-    X, y = load_fashion_mnist_sample(sample_size=5000)
+    X, y = load_fashion_mnist_sample(sample_size=2000)
     
     os.makedirs('latex_source', exist_ok=True)
 
@@ -24,7 +24,7 @@ def run_fashion_experiments():
         'batch_size': 128
     }
     
-    nn_best_params, nn_results = grid_search_cv(NeuralNetwork, X, y, nn_param_grid, k=3, fit_params=fit_params)
+    nn_best_params, nn_results = grid_search_cv(NeuralNetwork, X, y, nn_param_grid, k=10, fit_params=fit_params)
     
     print("\nNeural Network Full Results")
     for res in nn_results:
@@ -33,11 +33,14 @@ def run_fashion_experiments():
     print("\nRetraining optimal NN to capture learning curve...")
     optimal_nn = NeuralNetwork(**nn_best_params)
     cost_history = optimal_nn.fit(X, y, **fit_params)
+
+    m_samples = X.shape[1]
+    instances_presented = [epoch * m_samples for epoch in range(1, len(cost_history) + 1)]
     
     plt.figure(figsize=(8, 6))
-    plt.plot(range(len(cost_history)), cost_history, color='purple', linewidth=2)
+    plt.plot(instances_presented, cost_history, color='purple', linewidth=2)
     plt.title(f"Neural Network Convergence (Fashion-MNIST)\nParams: {nn_best_params}")
-    plt.xlabel("Epochs")
+    plt.xlabel("Number of Training Instances Presented")
     plt.ylabel("Cost (J)")
     plt.grid(True)
     plt.savefig('latex_source/nn_fashion_learning_curve.png')
