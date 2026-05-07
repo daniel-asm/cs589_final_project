@@ -1,152 +1,151 @@
+"""
+Original Author: Gabriel Lojo
+"""
+
 import numpy as np
-from collections import Counter
+import pandas as pd
+import matplotlib.pyplot as plt
+from sklearn.model_selection import train_test_split
+
+def calculate_entropy(y):
+    _, counts = np.unique(y, return_counts=True)
+    probabilities = counts / len(y)
+    return -np.sum(probabilities * np.log2(probabilities))
+
+def information_gain(X_column, y):
+    parent_entropy = calculate_entropy(y)
+    
+    values, counts = np.unique(X_column, return_counts=True)
+    weighted_child_entropy = 0
+    
+    for value, count in zip(values, counts):
+        subset_y = y[X_column == value]
+        weight = count / len(y)
+        weighted_child_entropy += weight * calculate_entropy(subset_y)
+        
+    return parent_entropy - weighted_child_entropy
+
 
 class Node:
-    def __init__(self, feature_index=None, threshold=None, children=None, left=None, right=None, value=None):
-        self.feature_index = feature_index 
-        self.threshold = threshold
-        self.children = children if children is not None else {}
-        self.left = left
-        self.right = right
-        self.value = value
+    def __init__(self, feature_index=None, branches=None, prediction=None, fallback_class=None):
+        self.feature_index = feature_index
+        self.branches = branches            
+        self.prediction = prediction       
+        self.fallback_class = fallback_class 
 
-class DecisionTreeClassifier:
-    def __init__(self, criterion='entropy', max_depth=None, min_samples_split=2, min_gain=0.0, max_features=None, **kwargs):
-        self.root = None
-        self.criterion = criterion
-        self.max_depth = max_depth if max_depth is not None else float('inf')
-        self.min_samples_split = min_samples_split
-        self.min_gain = min_gain
-        self.max_features = max_features
+def build_tree(X, y, feature_indices):
+    unique_labels, counts = np.unique(y, return_counts=True)
+    majority_class = unique_labels[np.argmax(counts)]
 
-    def _entropy(self, y):
-        label_counts = Counter(y)
-        total_instances = len(y)
-        entropy = 0.0
-        for count in label_counts.values():
-            probability = count / total_instances
-            if probability > 0:
-                entropy -= probability * np.log2(probability)
-        return entropy
+    if len(unique_labels) == 1:
+        return Node(prediction=unique_labels[0])
 
-    def _gini(self, y):
-        label_counts = Counter(y)
-        total_instances = len(y)
-        gini = 1.0
-        for count in label_counts.values():
-            probability = count / total_instances
-            gini -= probability ** 2
-        return gini
-            
-    def _calculate_numerical_gain(self, X_column, y):
-        X_column = X_column.astype(float)
-        sort_indices = np.argsort(X_column)
-        X_sorted = X_column[sort_indices]
-        y_sorted = y[sort_indices]
-        
-        unique_vals = np.unique(X_sorted)
-        if len(unique_vals) <= 1:
-            return -1, None
-        
-        thresholds = (unique_vals[:-1] + unique_vals[1:]) / 2
-        
-        if len(thresholds) > 15:
-            thresholds = np.percentile(X_column, np.linspace(10, 90, 9))
-            
-        parent_score = self._gini(y) if self.criterion == 'gini' else self._entropy(y)
-        best_gain = -1
-        best_threshold = None
-        total_instances = len(y)
-        
-        for thresh in thresholds:
-            left_mask = X_column <= thresh
-            right_mask = X_column > thresh
-            y_left, y_right = y[left_mask], y[right_mask]
-            
-            if len(y_left) == 0 or len(y_right) == 0:
-                continue
-                
-            weight_l, weight_r = len(y_left) / total_instances, len(y_right) / total_instances
-            score_l = self._gini(y_left) if self.criterion == 'gini' else self._entropy(y_left)
-            score_r = self._gini(y_right) if self.criterion == 'gini' else self._entropy(y_right)
-            
-            gain = parent_score - (weight_l * score_l + weight_r * score_r)
-            if gain > best_gain:
-                best_gain, best_threshold = gain, thresh
-                
-        return best_gain, best_threshold
+    if len(feature_indices) == 0:
+        return Node(prediction=majority_class)
 
-    def fit(self, X_train, y_train, **kwargs):
-        X_train = np.array(X_train).T
-        y_train = np.array(y_train).flatten()
-                
-        initial_features = list(range(X_train.shape[1]))
-        self.root = self._build_tree(X_train, y_train, initial_features, depth=0)
+    gains = [information_gain(X[:, i], y) for i in feature_indices]
+    
+    best_feature_idx = feature_indices[np.argmax(gains)]
+    
+    branches = {}
+    unique_values = np.unique(X[:, best_feature_idx])
+    
+    remaining_features = [f for f in feature_indices if f != best_feature_idx]
 
-    def _build_tree(self, X, y, available_features, depth):
-        label_counts = Counter(y)
-        majority_class = label_counts.most_common(1)[0][0]
+    for value in unique_values:
+        subset_indices = np.where(X[:, best_feature_idx] == value)[0]
+        subset_X = X[subset_indices]
+        subset_y = y[subset_indices]
 
-        if len(label_counts) == 1 or len(available_features) == 0 or depth >= self.max_depth or len(y) < self.min_samples_split:
-            return Node(value=majority_class)
-
-        features_to_evaluate = available_features
-        if self.max_features == 'sqrt':
-            num_features = max(1, int(np.sqrt(len(available_features))))
-            features_to_evaluate = np.random.choice(available_features, num_features, replace=False)
-
-        best_gain, best_feature, best_threshold = -1, None, None
-
-        for feature_idx in features_to_evaluate:
-            if self.is_numeric_feature[feature_idx]:
-                gain, threshold = self._calculate_numerical_gain(X[:, feature_idx], y)
-            else:
-                gain, threshold = self._calculate_categorical_gain(X[:, feature_idx], y)
-                
-            if gain > best_gain:
-                best_gain, best_feature, best_threshold = gain, feature_idx, threshold
-
-        if best_gain <= self.min_gain:
-             return Node(value=majority_class)
-
-        node = Node(feature_index=best_feature, value=majority_class)
-        
-        if self.is_numeric_feature[best_feature]:
-            node.is_numeric = True
-            node.threshold = best_threshold
-            left_mask = X[:, best_feature].astype(float) <= best_threshold
-            right_mask = X[:, best_feature].astype(float) > best_threshold
-            
-            node.left = self._build_tree(X[left_mask], y[left_mask], available_features, depth + 1)
-            node.right = self._build_tree(X[right_mask], y[right_mask], available_features, depth + 1)
+        if len(subset_y) == 0:
+            branches[value] = Node(prediction=majority_class)
         else:
-            node.is_numeric = False
-            remaining_features = [f for f in available_features if f != best_feature]
-            unique_values = np.unique(X[:, best_feature])
-            
-            for value in unique_values:
-                indices = np.where(X[:, best_feature] == value)[0]
-                node.children[value] = self._build_tree(X[indices], y[indices], remaining_features, depth + 1)
+            branches[value] = build_tree(subset_X, subset_y, remaining_features)
 
-        return node
+    return Node(feature_index=best_feature_idx, branches=branches, fallback_class=majority_class)
 
-    def predict(self, X_test):
-        X_test = np.array(X_test).T
-        return np.array([self._traverse_tree(x, self.root) for x in X_test])
+def predict_instance(node, x):
+    if node.prediction is not None:
+        return node.prediction
+    
+    feature_val = x[node.feature_index]
+    
+    if feature_val in node.branches:
+        return predict_instance(node.branches[feature_val], x)
+    else:
+        return node.fallback_class
 
-    def _traverse_tree(self, x, node):
-        if node.left is None and node.right is None and not node.children:
-            return node.value
-            
-        feature_val = x[node.feature_index]
+def predict_tree(tree, X_test):
+    return np.array([predict_instance(tree, x) for x in X_test])
+
+def main():
+    try:
+        df = pd.read_csv('car.csv') 
+    except FileNotFoundError:
+        print("Error: Car dataset CSV not found. Please check the file name/location.")
+        return
+
+    X = df.iloc[:, :6].values
+    y = df.iloc[:, 6].values
+    
+    initial_features = list(range(X.shape[1])) 
+
+    num_runs = 100
+    train_accuracies = []
+    test_accuracies = []
+
+    print(f"Running Decision Tree evaluations {num_runs} times. This will take a moment...")
+
+    for run in range(num_runs):
+        X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.20)
         
-        if node.is_numeric:
-            if float(feature_val) <= node.threshold:
-                return self._traverse_tree(x, node.left)
-            else:
-                return self._traverse_tree(x, node.right)
-        else:
-            if feature_val in node.children:
-                return self._traverse_tree(x, node.children[feature_val])
-            else:
-                return node.value
+        tree = build_tree(X_train, y_train, initial_features)
+        
+        y_train_pred = predict_tree(tree, X_train)
+        train_acc = np.mean(y_train_pred == y_train)
+        train_accuracies.append(train_acc)
+        
+        y_test_pred = predict_tree(tree, X_test)
+        test_acc = np.mean(y_test_pred == y_test)
+        test_accuracies.append(test_acc)
+        
+        if (run + 1) % 10 == 0:
+            print(f"Completed {run + 1}/100 runs...")
+
+    train_mean, train_std = np.mean(train_accuracies), np.std(train_accuracies)
+    test_mean, test_std = np.mean(test_accuracies), np.std(test_accuracies)
+
+    print("\n--- FINAL RESULTS ---")
+    print(f"Training - Mean: {train_mean:.4f}, Std Dev: {train_std:.4f}")
+    print(f"Testing  - Mean: {test_mean:.4f}, Std Dev: {test_std:.4f}")
+    
+    
+    # Training Histogram 
+    plt.figure(figsize=(8, 6))
+    plt.hist(train_accuracies, bins=15, color='blue', edgecolor='white')
+    train_text = f"Mean: {train_mean:.4f}\nStd Dev: {train_std:.4f}"
+    props = dict(boxstyle='round', facecolor='white', alpha=0.9, edgecolor='gray')
+    plt.gca().text(0.05, 0.95, train_text, transform=plt.gca().transAxes, 
+                   fontsize=11, verticalalignment='top', bbox=props)
+    plt.xlabel('Accuracy')
+    plt.ylabel('Frequency over Training Data')
+    plt.title('Decision Tree Training Accuracy Distribution (100 Runs)')
+    plt.grid(axis='y', alpha=0.75)
+    plt.savefig('dt_training_histogram.png')
+    plt.show()
+
+    # Testing Histogram 
+    plt.figure(figsize=(8, 6))
+    plt.hist(test_accuracies, bins=15, color='red', edgecolor='white')
+    test_text = f"Mean: {test_mean:.4f}\nStd Dev: {test_std:.4f}"
+    plt.gca().text(0.05, 0.95, test_text, transform=plt.gca().transAxes, 
+                   fontsize=11, verticalalignment='top', bbox=props)
+    plt.xlabel('Accuracy')
+    plt.ylabel('Frequency over Testing Data')
+    plt.title('Decision Tree Testing Accuracy Distribution (100 Runs)')
+    plt.grid(axis='y', alpha=0.75)
+    plt.savefig('dt_testing_histogram.png')
+    plt.show()
+
+if __name__ == "__main__":
+    main()
