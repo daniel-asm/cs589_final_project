@@ -24,3 +24,10 @@ This repository contains our implementations of several machine learning algorit
 2. Install the required dependencies:
    ```bash
    pip install -r requirements.txt
+
+## Running Experiments
+
+1. Run the command below in the terminal, replacing "run_example" with the name of the experiment file you'd like to run.
+2. Make sure you do not add .py to the end as the command recognizes the file without it
+   ```bash
+   python -m experiments.example
