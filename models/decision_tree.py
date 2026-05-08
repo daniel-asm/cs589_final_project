@@ -1,5 +1,15 @@
 """
 Original Author: Gabriel Lojo
+
+The original implementation was uploaded as a set of loose 
+functions designed strictly for discrete categorical data. 
+To make it pipeline-compliant and capable of handling continuous 
+floats, it was wrapped into a standard DecisionTreeClassifier 
+class with fit and predict functions. The splitting logic was 
+fundamentally upgraded to use continuous, binary numerical thresholds. 
+To prevent infinite recursion and massive slowdowns on high-variance 
+continuous datasets like Rice and Digits, a percentile-sampling 
+optimization was added to the threshold evaluation step.
 """
 import numpy as np
 

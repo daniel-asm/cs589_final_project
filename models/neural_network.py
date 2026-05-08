@@ -1,5 +1,13 @@
 """ 
 Original Author: Daniel Aziev-Smalovschi
+
+The original implementation was strictly designed for binary classification
+using a Sigmoid activation and binary cross-entropy cost function. To accommodate
+the multi-class Digits dataset, the fit and forward_propagation methods were 
+updated. The network now checks the size of the output layer during instantiation, 
+and if it detects a multi-class problem, it automatically one-hot encodes the 
+target labels and applies a Softmax activation to the final layer, ensuring valid 
+backpropagation gradients.
 """
 import numpy as np
 
