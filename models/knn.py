@@ -1,5 +1,15 @@
 """
 Original Author: Daniel Aziev-Smalovschi
+
+The original algorithm was updated to with our new universal evaluation 
+pipeline, which feeds data matrices in a (features, samples) shape. The 
+.fit() and .predict() methods were modified to automatically transpose 
+matrices and flatten target arrays to prevent shape-mismatch crashes. 
+Additionally, the core Euclidean distance calculation was vectorized using 
+NumPy. This replaced the original Python list comprehensions, reducing 
+cross-validation runtime for large datasets like Digits. Finally, **kwargs 
+was added to the class signature to safely absorb generic pipeline parameters 
+without throwing errors.
 """
 import numpy as np
 from collections import Counter
