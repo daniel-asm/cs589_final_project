@@ -266,11 +266,16 @@ def bootstrap_sample(x, y):
 
 # RandomForest class
 class RandomForest():
-    def __init__(self, ntree=10):
+    def __init__(self, ntree=10, min_samples_split=DEFAULT_MIN_SAMPLES_SPLIT, max_depth=DEFAULT_MAX_DEPTH, min_gain=DEFAULT_MIN_GAIN):
         self.x = None
         self.y = None
         self.ntree = ntree
         self.trees = []
+
+        # Stopping criteria
+        self.min_samples_split = min_samples_split
+        self.max_depth = max_depth
+        self.min_gain = min_gain
 
     def _predict(self, x):
         # Predict a point in each tree
@@ -294,7 +299,7 @@ class RandomForest():
         for _ in range(self.ntree):
             # Create a DecisionTree on a bootstrapped sample of the training data
             x_sample, y_sample = bootstrap_sample(self.x, self.y)
-            tree = DecisionTree()
+            tree = DecisionTree(min_samples_split=self.min_samples_split, max_depth=self.max_depth, min_gain=self.min_gain)
             tree.train(x_sample, y_sample)
 
             # Add it to the random forest
