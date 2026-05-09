@@ -28,6 +28,6 @@ This repository contains our implementations of several machine learning algorit
 ## Running Experiments
 
 1. Run the command below in the terminal, replacing "run_example" with the name of the experiment file you'd like to run.
-2. Make sure you do not add .py to the end as the command recognizes the file without it
+2. Make sure you do not add .py to the end as the command recognizes the file without it, example below
    ```bash
-   python -m experiments.example
+   python -m experiments.run_digits
